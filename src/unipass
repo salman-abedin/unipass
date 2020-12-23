@@ -1,0 +1,48 @@
+#!/bin/sh
+#
+# unipass: Browser independent password manager
+#
+# Dependencies: dmenu, gnupg, xsel & xdotool
+#
+# Usage: unipass add|fetch
+
+#===============================================================================
+#                             Config
+#===============================================================================
+
+GPG_MAIL=salmanabedin@disroot.org
+PASSWORD_PATH=$GIT/own/magpie-private/.local/share/passwords
+DMENU=dmenu
+
+#===============================================================================
+#                             Script
+#===============================================================================
+
+case $1 in
+   add)
+      ACCOUNT=$(: | $DMENU -p "Account") &&
+         NAME=$(: | $DMENU -p "Name") &&
+         PASS=$(: | $DMENU -p "Pass") && {
+         FILE=$PASSWORD_PATH/"$ACCOUNT"
+         echo "$NAME,$PASS" > "$FILE"
+         gpg -esr $GPG_MAIL "$FILE"
+         rm "$FILE"
+      }
+      ;;
+   fetch)
+      ACCOUNT=$(
+         for file in "$PASSWORD_PATH"/*.gpg; do
+            TRIMMED_LEAD=${file##*/}
+            TRIMMED_TRAIL=${TRIMMED_LEAD%.*}
+            echo "$TRIMMED_TRAIL"
+         done | $DMENU
+      ) && {
+         NAME_PASS=$(gpg -d "$PASSWORD_PATH/$ACCOUNT".gpg)
+         NAME=${NAME_PASS%%,*}
+         PASS=${NAME_PASS#*,}
+         echo "$NAME" | xsel -b
+         xdotool key Control+Shift+v
+         echo "$PASS" | xsel -b
+      }
+      ;;
+esac
