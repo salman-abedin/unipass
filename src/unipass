@@ -19,17 +19,19 @@ DMENU=dmenu
 #===============================================================================
 
 case $1 in
-   add)
+   a*)
       ACCOUNT=$(: | $DMENU -p "Account") &&
          NAME=$(: | $DMENU -p "Name") &&
          PASS=$(: | $DMENU -p "Pass") && {
+         #PASS=$(gpg --gen-random --armor 1 15)
+         #echo "$PASS" | xsel -b
          FILE=$PASSWORD_PATH/"$ACCOUNT"
          echo "$NAME,$PASS" > "$FILE"
          gpg -esr $GPG_MAIL "$FILE"
          rm "$FILE"
       }
       ;;
-   fetch)
+   f*)
       ACCOUNT=$(
          for file in "$PASSWORD_PATH"/*.gpg; do
             TRIMMED_LEAD=${file##*/}
@@ -41,7 +43,7 @@ case $1 in
          NAME=${NAME_PASS%%,*}
          PASS=${NAME_PASS#*,}
          echo "$NAME" | xsel -b
-         xdotool key Control+Shift+v
+         xdotool key Control+v
          echo "$PASS" | xsel -b
       }
       ;;
