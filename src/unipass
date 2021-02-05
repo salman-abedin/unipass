@@ -2,7 +2,7 @@
 #
 # unipass: Browser independent password manager
 #
-# Dependencies: dmenu, gnupg, xsel & xdotool
+# Dependencies: dmenu/rofi, gnupg, xsel & xdotool
 #
 # Usage: unipass add|fetch
 
@@ -39,12 +39,15 @@ case $1 in
             echo "$TRIMMED_TRAIL"
          done | $DMENU
       ) && {
-         NAME_PASS=$(gpg -d "$PASSWORD_PATH/$ACCOUNT".gpg)
+         FILE=$PASSWORD_PATH/$ACCOUNT
+         NAME_PASS=$(gpg -d "$FILE".gpg)
          NAME=${NAME_PASS%%,*}
          PASS=${NAME_PASS#*,}
          echo "$NAME" | xsel -b
          xdotool key Control+v
+         xdotool key Tab
          echo "$PASS" | xsel -b
+         rm "$FILE"
       }
       ;;
 esac
