@@ -2,7 +2,7 @@
 #
 # unipass: Browser independent password manager
 #
-# Dependencies: dmenu/rofi, gnupg, xsel & xdotool
+# Dependencies: amenu/dmenu/rofi, gnupg, xsel & xdotool
 #
 # Usage: unipass add|fetch
 
@@ -12,17 +12,19 @@
 
 GPG_MAIL=salmanabedin@disroot.org
 PASSWORD_PATH=$GIT/own/magpie-private/.local/share/passwords
-DMENU=dmenu
+DMENU=amenu
 
 #===============================================================================
 #                             Script
 #===============================================================================
 
+prompt(){ : | $DMENU -p "$1"; }
+
 case $1 in
    a*)
-      ACCOUNT=$(: | $DMENU -p "Account") &&
-         NAME=$(: | $DMENU -p "Name") &&
-         PASS=$(: | $DMENU -p "Pass") && {
+      ACCOUNT=$(prompt "Account") &&
+         NAME=$(prompt "Name") &&
+         PASS=$(prompt "Pass") && {
          #PASS=$(gpg --gen-random --armor 1 15)
          #echo "$PASS" | xsel -b
          FILE=$PASSWORD_PATH/"$ACCOUNT"
