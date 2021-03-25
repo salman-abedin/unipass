@@ -11,49 +11,59 @@
 #===============================================================================
 
 GPG_MAIL=salmanabedin@disroot.org
-PASSWORD_PATH=$GIT/own/magpie-private/.local/share/passwords
+SOURCE=/mnt/internal/git/system/magpie-private/.local/share/misc/passwords
 DMENU=amenu
 
 #===============================================================================
 #                             Script
 #===============================================================================
 
-prompt() { : | $DMENU -p "$1" || kill $$; }
+prompt() { : | $DMENU -p "$1" || exit 0; }
+
+gpg -d "$SOURCE".gpg > "$SOURCE"
+
+trap 'rm -f $SOURCE' HUP EXIT
 
 case $1 in
-   a*)
-      ACCOUNT=$(prompt "Account")
-      [ -z "$ACCOUNT" ] && exit 1
-      NAME=$(prompt "Name")
-      [ -z "$NAME" ] && exit 1
-      PASS=$(prompt "Pass")
-      if [ -z "$PASS" ]; then
-         PASS=$(gpg --gen-random --armor 1 15)
-         echo "$PASS" | xsel -b
-      fi
-      FILE=$PASSWORD_PATH/"$ACCOUNT"
-      echo "$NAME,$PASS" > "$FILE"
-      gpg -esr $GPG_MAIL "$FILE"
-      rm "$FILE"
-      ;;
-   f*)
-      ACCOUNT=$(
-         for file in "$PASSWORD_PATH"/*.gpg; do
-            TRIMMED_LEAD_ONLY=${file##*/}
-            TRIMMED_LEAD_TRAIL=${TRIMMED_LEAD_ONLY%.*}
-            echo "$TRIMMED_LEAD_TRAIL"
-         done | $DMENU || kill $$
-      )
-      [ -z "$ACCOUNT" ] && exit 1
-
-      FILE=$PASSWORD_PATH/$ACCOUNT
-      NAME_PASS=$(gpg -d "$FILE".gpg)
-      NAME=${NAME_PASS%%,*}
-      PASS=${NAME_PASS#*,}
-      echo "$NAME" | xsel -b
-      xdotool key Control+v
-      xdotool key Tab
+  a*)
+    ACCOUNT=$(prompt "Account")
+    [ -z "$ACCOUNT" ] && exit 1
+    NAME=$(prompt "Name")
+    [ -z "$NAME" ] && exit 1
+    PASS=$(prompt "Pass")
+    if [ -z "$PASS" ]; then
+      PASS=$(gpg --gen-random --armor 1 12)
       echo "$PASS" | xsel -b
-      rm "$FILE"
-      ;;
+    fi
+
+    echo "$ACCOUNT,$NAME,$PASS" >> "$SOURCE"
+    rm "$SOURCE".gpg
+    gpg -esr "$GPG_MAIL" "$SOURCE"
+    ;;
+  f*)
+    ACCOUNT=$(
+      while IFS= read -r line; do
+        i=$((i + 1))
+        [ $i = 1 ] && continue
+        echo "${line%%,*}"
+      done < "$SOURCE" | $DMENU || exit 0
+    )
+    [ -z "$ACCOUNT" ] && exit 1
+
+    while IFS= read -r line; do
+      if [ "${line%%,*}" = "$ACCOUNT" ]; then
+        NAME_N_PASS=${line#*,}
+        NAME="${NAME_N_PASS%,*}"
+        PASS="${NAME_N_PASS#*,}"
+
+        # echo "$NAME" | xsel -b
+        # xdotool key Control+v
+        xdotool type "$NAME"
+
+        xdotool key Tab
+        echo "$PASS" | xsel -b
+        # xdotool key Control+v
+      fi
+    done < "$SOURCE"
+    ;;
 esac
