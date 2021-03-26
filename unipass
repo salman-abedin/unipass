@@ -10,7 +10,7 @@
 #                             Config
 #===============================================================================
 
-GPG_ID=salmanabedin@disroot.org
+GPG_ID=salmanabedin@disroot.org     # GPG_ID can be your ID or even email, attached to the gpg key you want to use
 PASSWORD_PATH=$GIT/own/magpie-private/.local/share/passwords
 DMENU=amenu
 
