@@ -4,66 +4,56 @@
 #
 # Dependencies: amenu/dmenu/rofi, gnupg, xsel & xdotool
 #
+# Environment Variable: DMENU, GPG_MAIL, UNIPASS_SOURCE
+#
 # Usage: unipass add|fetch
-
-#===============================================================================
-#                             Config
-#===============================================================================
-
-GPG_MAIL=salmanabedin@disroot.org
-SOURCE=/mnt/internal/git/system/magpie-private/.local/share/misc/passwords
-DMENU=amenu
-
-#===============================================================================
-#                             Script
-#===============================================================================
 
 prompt() { : | $DMENU -p "$1" || exit 0; }
 
-gpg -d "$SOURCE".gpg > "$SOURCE"
+gpg -d "$UNIPASS_SOURCE".gpg > "$UNIPASS_SOURCE"
 
-trap 'rm -f $SOURCE' HUP EXIT
+trap 'rm -f $UNIPASS_SOURCE' HUP EXIT
 
 case $1 in
-  a*)
-    ACCOUNT=$(prompt "Account")
-    [ -z "$ACCOUNT" ] && exit 1
-    NAME=$(prompt "Name")
-    [ -z "$NAME" ] && exit 1
-    PASS=$(prompt "Pass")
-    if [ -z "$PASS" ]; then
-      PASS=$(gpg --gen-random --armor 1 12)
-      echo "$PASS" | xsel -b
-    fi
+    a*)
+        account=$(prompt "Account")
+        [ -z "$account" ] && exit 1
+        name=$(prompt "Name")
+        [ -z "$name" ] && exit 1
+        pass=$(prompt "Pass")
+        if [ -z "$pass" ]; then
+            pass=$(gpg --gen-random --armor 1 12)
+            echo "$pass" | xsel -b
+        fi
 
-    echo "$ACCOUNT,$NAME,$PASS" >> "$SOURCE"
-    rm "$SOURCE".gpg
-    gpg -esr "$GPG_MAIL" "$SOURCE"
-    ;;
-  f*)
-    ACCOUNT=$(
-      while IFS= read -r line; do
-        i=$((i + 1))
-        [ $i = 1 ] && continue
-        echo "${line%%,*}"
-      done < "$SOURCE" | $DMENU || exit 0
-    )
-    [ -z "$ACCOUNT" ] && exit 1
+        echo "$account,$name,$pass" >> "$UNIPASS_SOURCE"
+        rm "$UNIPASS_SOURCE".gpg
+        gpg -esr "$GPG_MAIL" "$UNIPASS_SOURCE"
+        ;;
+    f*)
+        account=$(
+            while IFS= read -r line; do
+                i=$((i + 1))
+                [ $i = 1 ] && continue
+                echo "${line%%,*}"
+            done < "$UNIPASS_SOURCE" | $DMENU || exit 0
+        )
+        [ -z "$account" ] && exit 1
 
-    while IFS= read -r line; do
-      if [ "${line%%,*}" = "$ACCOUNT" ]; then
-        NAME_N_PASS=${line#*,}
-        NAME="${NAME_N_PASS%,*}"
-        PASS="${NAME_N_PASS#*,}"
+        while IFS= read -r line; do
+            if [ "${line%%,*}" = "$account" ]; then
+                name_n_pass=${line#*,}
+                name="${name_n_pass%,*}"
+                pass="${name_n_pass#*,}"
 
-        # echo "$NAME" | xsel -b
-        # xdotool key Control+v
-        xdotool type "$NAME"
+                # echo "$name" | xsel -b
+                # xdotool key Control+v
+                xdotool type "$name"
 
-        xdotool key Tab
-        echo "$PASS" | xsel -b
-        # xdotool key Control+v
-      fi
-    done < "$SOURCE"
-    ;;
+                xdotool key Tab
+                echo "$pass" | xsel -b
+                # xdotool key Control+v
+            fi
+        done < "$UNIPASS_SOURCE"
+        ;;
 esac
