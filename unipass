@@ -2,17 +2,13 @@
 #
 # unipass: Browser independent password manager
 #
-# Dependencies: amenu/dmenu/rofi, gnupg, xsel & xdotool
+# Dependencies: amenu/dmenu/rofi, gnupg, wl-clipboard & ydotool
 #
 # Environment Variable: DMENU, GPG_MAIL, UNIPASS_SOURCE
 #
 # Usage: unipass add|fetch
 
 prompt() { : | $DMENU -p "$1" || exit 0; }
-
-gpg -d "$UNIPASS_SOURCE".gpg > "$UNIPASS_SOURCE"
-
-trap 'rm -f $UNIPASS_SOURCE' HUP EXIT
 
 case $1 in
     a*)
@@ -24,11 +20,9 @@ case $1 in
         if [ -z "$pass" ]; then
             pass=$(gpg --gen-random --armor 1 12)
             echo "$pass" | xsel -b
+            echo "$pass" | wl-copy
         fi
-
         echo "$account,$name,$pass" >> "$UNIPASS_SOURCE"
-        rm "$UNIPASS_SOURCE".gpg
-        gpg -esr "$GPG_MAIL" "$UNIPASS_SOURCE"
         ;;
     f*)
         account=$(
@@ -46,13 +40,10 @@ case $1 in
                 name="${name_n_pass%,*}"
                 pass="${name_n_pass#*,}"
 
-                # echo "$name" | xsel -b
-                # xdotool key Control+v
-                xdotool type "$name"
-
-                xdotool key Tab
+                ydotool type "$name"
+                #  xdotool key Tab
                 echo "$pass" | xsel -b
-                # xdotool key Control+v
+                echo "$pass" | wl-copy
             fi
         done < "$UNIPASS_SOURCE"
         ;;
